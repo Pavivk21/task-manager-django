@@ -1,0 +1,40 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+
+<div class="d-flex justify-content-center mt-5">
+<div class="card p-4 shadow-lg border-0 bg-white bg-opacity-75 rounded-4 mx-auto" style="max-width: 700px;">
+  <div class="card-body">
+    <h2 class="card-title text-primary mb-3">{{ task.title }}</h2>
+    <p class="card-text">{{ task.description }}</p>
+
+    <hr class="my-3">
+
+    <p class="mb-2">
+      <strong>Status:</strong>
+      {% if task.status == "TODO" %}
+        <span class="badge bg-warning text-dark">To-Do</span>
+      {% elif task.status == "INPROGRESS" %}
+        <span class="badge bg-primary">In Progress</span>
+      {% elif task.status == "COMPLETED" %}
+        <span class="badge bg-success">Completed</span>
+      {% endif %}
+    </p>
+
+    <p><strong>Due Date:</strong> {{ task.due_date|date:"M. d, Y" }}</p>
+    <p><strong>Created At:</strong> {{ task.created_at|date:"F j, Y, g:i a" }}</p>
+
+    <hr class="my-3">
+
+    <div class="d-flex gap-2">
+      <a href="{% url 'task_update' task.pk %}" class="btn btn-warning">Edit</a>
+      <a href="{% url 'task_delete' task.pk %}" class="btn btn-danger">Delete</a>
+      <a href="{% url 'home' %}" class="btn btn-secondary">Back</a>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+
+

@@ -1,0 +1,13 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="card p-4">
+    <h2>Create a New Workspace</h2>
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Create Workspace</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

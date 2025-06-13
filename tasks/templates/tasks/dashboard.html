@@ -1,0 +1,191 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+<h2 class="mb-4 text-white">Dashboard Overview</h2>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-light">
+      <h5>Total Tasks</h5>
+      <h3>{{ total }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-light">
+      <h5>Completed</h5>
+      <h3>{{ completed }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-light">
+      <h5>Pending</h5>
+      <h3>{{ pending }}</h3>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-center p-3 bg-light">
+      <h5>In Progress</h5>
+      <h3>{{ in_progress }}</h3>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Tasks Table -->
+<div class="card p-3 mb-4 bg-light">
+  <h4>Recent Tasks</h4>
+  <table class="table table-hover mt-3">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Status</th>
+        <th>Due Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+      <tr>
+        <td>{{ task.title }}</td>
+        <td>{{ task.status }}</td>
+        <td>{{ task.due_date|date:"M. d, Y" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="3">No tasks found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pie Chart Section -->
+<div class="card p-3 bg-light mb-5" style="max-width: 400px; margin: auto;">
+  <h4 class="text-center">Task Status Distribution</h4>
+  <canvas id="taskChart"></canvas>
+</div>
+
+<!-- Hidden JSON data for charts -->
+{{ dates|json_script:"dates-data" }}
+{{ completion_counts|json_script:"completion-counts" }}
+{{ overdue_labels|json_script:"overdue-labels" }}
+{{ overdue_counts|json_script:"overdue-counts" }}
+{{ status_labels|json_script:"status-labels" }}
+{{ status_counts|json_script:"status-counts" }}
+
+<!-- Analytics Charts -->
+<div class="row mt-5">
+  <div class="col-lg-6 mb-4">
+    <div class="card p-3 bg-light">
+      <h5 class="text-center">Task Completion Over Time</h5>
+      <canvas id="completionChart"></canvas>
+    </div>
+  </div>
+
+  <div class="col-lg-6 mb-4">
+    <div class="card p-3 bg-light">
+      <h5 class="text-center">Overdue Tasks</h5>
+      <canvas id="overdueChart"></canvas>
+    </div>
+  </div>
+</div> <!-- ✅ Fixed missing closing tag -->
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Dashboard Pie Chart Script -->
+<script>
+  const statusLabels = JSON.parse(document.getElementById('status-labels').textContent);
+  const statusCounts = JSON.parse(document.getElementById('status-counts').textContent);
+
+  new Chart(document.getElementById('taskChart'), {
+    type: 'pie',
+    data: {
+      labels: statusLabels,
+      datasets: [{
+        label: 'Task Status',
+        data: statusCounts,
+        backgroundColor: [
+          'rgba(40, 167, 69, 0.7)',     // Green
+          'rgba(255, 193, 7, 0.7)',     // Yellow
+          'rgba(0, 123, 255, 0.7)',     // Blue
+        ],
+        borderColor: ['#28a745', '#ffc107', '#007bff', '#dc3545', '#6c757d'],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#000',
+            boxWidth: 20,
+            font: {
+              size: 15
+            }
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<!-- Analytics Chart Scripts -->
+<script>
+  const dates = JSON.parse(document.getElementById('dates-data').textContent);
+  const completionCounts = JSON.parse(document.getElementById('completion-counts').textContent);
+  const overdueLabels = JSON.parse(document.getElementById('overdue-labels').textContent);
+  const overdueCounts = JSON.parse(document.getElementById('overdue-counts').textContent);
+
+  new Chart(document.getElementById('completionChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: dates,
+      datasets: [{
+        label: 'Completed Tasks',
+        data: completionCounts,
+        borderColor: 'rgba(75, 192, 192, 1)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Tasks Completed Over Time'
+        }
+      }
+    }
+  });
+
+  new Chart(document.getElementById('overdueChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: overdueLabels,
+      datasets: [{
+        label: 'Overdue Tasks',
+        data: overdueCounts,
+        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Overdue Tasks by Date'
+        }
+      }
+    }
+  });
+</script>
+
+{% endblock %}

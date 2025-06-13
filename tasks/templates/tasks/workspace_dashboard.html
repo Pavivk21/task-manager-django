@@ -1,0 +1,189 @@
+{% extends 'tasks/base.html' %}
+{% load static %}
+{% block content %}
+
+{% if messages %}
+  {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} mt-2 mx-auto" style="max-width: 800px;">
+      {{ message }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+<style>
+  body {
+    background: #1d2230;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .dashboard-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 2rem;
+    background-color: #545454;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  }
+
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-header h2 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+  }
+
+  .dashboard-buttons a {
+    margin-left: 0.5rem;
+  }
+
+  .stats-container {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .stat-card {
+    flex: 1;
+    background: #f9fafb;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px #e5e7eb;
+    text-align: center;
+  }
+
+  .stat-card h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #6b7280;
+  }
+
+  .stat-card span {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #111827;
+  }
+
+  .task-list {
+    margin-top: 2rem;
+  }
+
+  .task-list h4 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .task-item {
+    background: #000307;
+    padding: 1rem;
+    border-radius: 10px;
+    margin-bottom: 0.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+
+  .task-title {
+    color: #f9fafb;
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .task-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .task-status {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.85rem;
+    border-radius: 50px;
+    font-weight: 500;
+    border: none;
+    color: #fff;
+  }
+  .TODO {
+    background-color: #3b82f6;
+  }
+
+  .INPROGRESS {
+    background-color: #f59e0b;
+  }
+
+  .COMPLETED {
+    background-color: #10b981;
+  }
+  select.task-status {
+    appearance: none;
+    background-color: transparent;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  select.task-status option {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+</style>
+
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h2>{{ workspace.name }} Dashboard</h2>
+    <div class="dashboard-buttons">
+      {% if user in workspace.members.all or user == workspace.owner %}
+        <a href="{% url 'create_workspace_task' workspace.id %}" class="btn btn-primary">➕ Create Task</a>
+      {% endif %}
+      <a href="{% url 'invite_user' workspace.id %}" class="btn btn-outline-secondary">👤 Invite User</a>
+    </div>
+  </div>
+
+  <div class="stats-container">
+    <div class="stat-card">
+      <h5>Total Tasks</h5>
+      <span>{{ total_tasks }}</span>
+    </div>
+    <div class="stat-card">
+      <h5>Completed Tasks</h5>
+      <span>{{ completed_tasks }}</span>
+    </div>
+    <div class="stat-card">
+      <h5>Progress</h5>
+      <span>{{ progress }}%</span>
+    </div>
+  </div>
+
+  <div class="task-list">
+    <h4>Recent Tasks</h4>
+    {% if tasks %}
+{% for task in tasks %}
+  <form method="post" action="{% url 'update_task_status' %}" class="task-item">
+    {% csrf_token %}
+    <input type="hidden" name="task_id" value="{{ task.id }}">
+
+    <div>
+      <strong>{{ task.title }}</strong><br>
+      <span class="task-status {{ task.status|upper }}">{{ task.get_status_display }}</span>
+    </div>
+
+    <select name="status" onchange="this.form.submit()">
+      {% for key, label in task.STATUS_CHOICES %}
+        <option value="{{ key }}" {% if task.status == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+{% endfor %}
+    {% else %}
+      <p>No tasks yet in this workspace.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

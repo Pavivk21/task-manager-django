@@ -1,0 +1,39 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+{% load form_tags %}
+<div class="container mt-5" style="max-width: 700px;">
+  <div class="card shadow rounded-4 p-4 border-0" style="background-color: #f9fafb;">
+    <h3 class="mb-4 text-dark fw-semibold">Create Task for <span class="text-primary">{{ workspace.name }}</span></h3>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-medium">Title</label>
+        {{ form.title|add_class:"form-control form-control-lg shadow-sm" }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-medium">Description</label>
+        {{ form.description|add_class:"form-control shadow-sm" }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-medium">Due Date</label>
+        {{ form.due_date|add_class:"form-control shadow-sm" }}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-medium">Status</label>
+        {{ form.status|add_class:"form-select shadow-sm" }}
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <a href="{% url 'workspace_dashboard' workspace.id %}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+        <button type="submit" class="btn btn-primary px-4 shadow-sm">➕ Create Task</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

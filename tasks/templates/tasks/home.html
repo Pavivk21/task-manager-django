@@ -1,0 +1,145 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col text-center">
+    <h1 class="mb-4 fw-bold text-white">YOUR TASKS</h1>
+  </div>
+</div>
+
+<!-- Filter & New Task Buttons -->
+<style>
+  .form-select-lg {
+    font-size: 2rem;
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    border: 5px solid black;
+    font-weight: bold;
+    color: black;
+  }
+  .form-select-lg:focus {
+    border-color: black;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  }
+  .custom-filter {
+    max-width: 300px;
+  }
+
+
+</style>
+
+
+<form method="get" class="row g-3 align-items-end justify-content-center mb-4">
+  <!-- Status Filter -->
+  <div class="col-md-2">
+    <label class="form-label text-black">STATUS:</label>
+    <select name="filter" class="form-select form-select-sm custom-filter">
+      <option value="">All</option>
+      <option value="completed" {% if request.GET.filter == 'completed' %}selected{% endif %}>Completed</option>
+      <option value="pending" {% if request.GET.filter == 'pending' %}selected{% endif %}>Pending</option>
+      <option value="today" {% if request.GET.filter == 'today' %}selected{% endif %}>Today</option>
+      <option value="week" {% if request.GET.filter == 'week' %}selected{% endif %}>This Week</option>
+    </select>
+  </div>
+
+  <!-- Month Filter -->
+  <div class="col-md-2">
+    <label class="form-label text-black">MONTH:</label>
+    <select name="month" class="form-select form-select-sm">
+      <option value="">Select Month</option>
+      {% for num, name in months %}
+        <option value="{{ num }}" {% if selected_month == num %}selected{% endif %}>{{ name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Date Range Filter -->
+  <div class="col-md-2">
+    <label for="start" class="form-label text-black fw-semibold">FROM:</label>
+    <input type="date" name="start" id="start" class="form-control" value="{{ request.GET.start }}">
+  </div>
+  <div class="col-md-2">
+    <label for="end" class="form-label text-black fw-semibold">TO:</label>
+    <input type="date" name="end" id="end" class="form-control" value="{{ request.GET.end }}">
+  </div>
+
+  <!-- Buttons -->
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">Apply</button>
+    <a href="{% url 'home' %}" class="btn btn-secondary ms-2">Clear</a>
+  </div>
+
+  <!-- New Task -->
+  <div class="col-auto">
+    <a href="{% url 'task_create' %}" class="btn btn-success rounded-pill">+ New Task</a>
+  </div>
+</form>
+
+{% if selected_month_name or start or end %}
+  <h5 class="text-white mb-4">
+    Showing tasks
+    {% if start %} from <strong>{{ start }}</strong>{% endif %}
+    {% if end %} to <strong>{{ end }}</strong>{% endif %}
+    {% if selected_month_name %} in <strong>{{ selected_month_name }}</strong>{% endif %}
+  </h5>
+{% else %}
+  <h5 class="mb-4 text-white">SHOWING ALL TASKS</h5>
+{% endif %}
+
+
+<!-- Task Cards -->
+<div class="row row-cols-1 row-cols-md-2 g-4">
+  {% for task in tasks %}
+    <div class="col">
+      <div class="card border-0 shadow-sm rounded-4 bg-white bg-opacity-75 px-3 py-2">
+        <div class="card-body">
+          <h5 class="card-title d-flex justify-content-between align-items-center">
+            <strong>{{ task.title }}</strong>
+            {% if task.status == "TODO" %}
+              <span class="badge rounded-pill bg-warning text-dark">To-Do</span>
+            {% elif task.status == "INPROGRESS" %}
+              <span class="badge rounded-pill bg-primary">In Progress</span>
+            {% elif task.status == "COMPLETED" %}
+              <span class="badge rounded-pill bg-success">Completed</span>
+            {% endif %}
+          </h5>
+          <p class="text-muted small mb-2">Due: {{ task.due_date|date:"d M, Y" }}</p>
+          <p class="card-text">{{ task.description|truncatechars:140 }}</p>
+          <a href="{% url 'task_detail' task.pk %}" class="btn btn-outline-primary btn-sm">View</a>
+        </div>
+      </div>
+    </div>
+  
+  {% empty %}
+    <p class="text-black">No tasks available.</p>
+  {% endfor %}
+</div>
+
+
+<!-- Pagination -->
+{% if tasks.has_other_pages %}
+  <nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if tasks.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ tasks.previous_page_number }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}">Previous</a>
+        </li>
+      {% endif %}
+
+      {% for num in tasks.paginator.page_range %}
+        <li class="page-item {% if tasks.number == num %}active{% endif %}">
+          <a class="page-link" href="?page={{ num }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}">{{ num }}</a>
+        </li>
+      {% endfor %}
+
+      {% if tasks.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ tasks.next_page_number }}{% if request.GET.filter %}&filter={{ request.GET.filter }}{% endif %}{% if selected_month %}&month={{ selected_month }}{% endif %}">Next</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}
+
+{% endblock %}
