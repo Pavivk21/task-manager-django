@@ -23,15 +23,11 @@
         {{ form.due_date|add_class:"form-control shadow-sm" }}
       </div>
 
-      <div class="mb-3">
-        <label class="form-label fw-medium">Status</label>
-        {{ form.status|add_class:"form-select shadow-sm" }}
-      </div>
-
       <div class="d-flex justify-content-between">
         <a href="{% url 'workspace_dashboard' workspace.id %}" class="btn btn-outline-secondary">← Back to Dashboard</a>
-        <button type="submit" class="btn btn-primary px-4 shadow-sm">➕ Create Task</button>
+        <button type="submit" class="btn btn-success">Save</button>
       </div>
+
     </form>
   </div>
 </div>

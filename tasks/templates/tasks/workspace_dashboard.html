@@ -2,13 +2,6 @@
 {% load static %}
 {% block content %}
 
-{% if messages %}
-  {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} mt-2 mx-auto" style="max-width: 800px;">
-      {{ message }}
-    </div>
-  {% endfor %}
-{% endif %}
 
 <style>
   body {
@@ -87,19 +80,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    flex-wrap: wrap;
   }
 
   .task-title {
     color: #f9fafb;
     font-weight: 500;
     flex: 1;
-  }
-
-  .task-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    margin-right: 1rem;
   }
 
   .task-status {
@@ -109,7 +97,10 @@
     font-weight: 500;
     border: none;
     color: #fff;
+    margin-top: 0.3rem;
+    display: inline-block;
   }
+
   .TODO {
     background-color: #3b82f6;
   }
@@ -121,17 +112,43 @@
   .COMPLETED {
     background-color: #10b981;
   }
-  select.task-status {
-    appearance: none;
-    background-color: transparent;
-    font-weight: 600;
-    cursor: pointer;
-  }
 
-  select.task-status option {
-    background-color: #1f2937;
-    color: #f9fafb;
+  select.status-dropdown {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #111827;
+    cursor: pointer;
+    min-width: 130px;
   }
+.pagination {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #d1d5db;
+}
+
+.pagination a {
+  color: #3b82f6;
+  text-decoration: none;
+  margin: 0 6px;
+  font-weight: 600;
+}
+
+.pagination span {
+  color: #f9fafb;
+  font-weight: 500;
+}
+
+.task-title small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #d1d5db;
+}
+
 </style>
 
 <div class="dashboard-container">
@@ -139,9 +156,9 @@
     <h2>{{ workspace.name }} Dashboard</h2>
     <div class="dashboard-buttons">
       {% if user in workspace.members.all or user == workspace.owner %}
-        <a href="{% url 'create_workspace_task' workspace.id %}" class="btn btn-primary">➕ Create Task</a>
+        <a href="{% url 'create_workspace_task' workspace.id %}" class="btn btn-primary">Create Task</a>
       {% endif %}
-      <a href="{% url 'invite_user' workspace.id %}" class="btn btn-outline-secondary">👤 Invite User</a>
+      <a href="{% url 'invite_user' workspace.id %}" class="btn btn-primary">Invite User</a>
     </div>
   </div>
 
@@ -163,27 +180,48 @@
   <div class="task-list">
     <h4>Recent Tasks</h4>
     {% if tasks %}
-{% for task in tasks %}
-  <form method="post" action="{% url 'update_task_status' %}" class="task-item">
-    {% csrf_token %}
-    <input type="hidden" name="task_id" value="{{ task.id }}">
+      {% for task in tasks %}
+        <form method="post" action="{% url 'update_task_status' %}" class="task-item">
+          {% csrf_token %}
+          <input type="hidden" name="task_id" value="{{ task.id }}">
 
-    <div>
-      <strong>{{ task.title }}</strong><br>
-      <span class="task-status {{ task.status|upper }}">{{ task.get_status_display }}</span>
-    </div>
+          <div class="task-title">
+            <strong>{{ task.title }}</strong><br>
+            <small style="color: #d1d5db;">{{ task.description }}</small>
+            <span class="task-status {{ task.status|upper }}">{{ task.get_status_display }}</span>
+          </div>
 
-    <select name="status" onchange="this.form.submit()">
-      {% for key, label in task.STATUS_CHOICES %}
-        <option value="{{ key }}" {% if task.status == key %}selected{% endif %}>{{ label }}</option>
+          <div>
+            <select name="status" class="status-dropdown" onchange="this.form.submit()">
+              <option value="TODO" {% if task.status == "TODO" %}selected{% endif %}>To-Do</option>
+              <option value="INPROGRESS" {% if task.status == "INPROGRESS" %}selected{% endif %}>In Progress</option>
+              <option value="COMPLETED" {% if task.status == "COMPLETED" %}selected{% endif %}>Completed</option>
+            </select>
+          </div>
+        </form>
       {% endfor %}
-    </select>
-  </form>
-{% endfor %}
     {% else %}
       <p>No tasks yet in this workspace.</p>
     {% endif %}
   </div>
+
+  <div class="pagination" style="margin-top: 1rem; text-align: center;">
+  <span class="step-links">
+    {% if page_obj.has_previous %}
+      <a href="?page=1">&laquo; First</a>
+      <a href="?page={{ page_obj.previous_page_number }}">‹ Prev</a>
+    {% endif %}
+
+    <span style="margin: 0 8px;">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">Next ›</a>
+      <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+    {% endif %}
+  </span>
+</div>
 </div>
 
+
 {% endblock %}
+

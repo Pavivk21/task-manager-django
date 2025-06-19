@@ -2,6 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import CustomLoginView
 from . import views
+from .views import reminders_view
 
 urlpatterns = [
     # Home
@@ -20,7 +21,6 @@ urlpatterns = [
 
     # Dashboard & Profile
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('reminders/', views.reminders, name='reminders'),
     path('profile/', views.profile, name='profile'),
     path('profile/edit/', views.edit_profile, name='edit_profile'),
 
@@ -39,6 +39,11 @@ urlpatterns = [
     path('post-login/', views.post_login_redirect, name='post_login_redirect'),
     path('workspace/<int:workspace_id>/task/create/', views.create_workspace_task, name='create_workspace_task'),
     path('update-task-status/', views.update_task_status, name='update_task_status'),
+    path('reminders/', reminders_view, name='reminders'),
+    path('test/add-reminder/', views.quick_add_reminder, name='quick_add_reminder'),
+    path('reminders/view/<str:category>/', views.view_more_reminders, name='view_more_reminders'),
+    path('reminder/<int:pk>/edit/', views.edit_reminder_task, name='edit_reminder_task'),
+    path('reminder/<int:pk>/send/', views.send_reminder_notification, name='send_reminder_notification'),
 
 
 

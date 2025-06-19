@@ -1,5 +1,168 @@
 {% extends 'tasks/base.html' %}
+{% load static %}
+
 {% block content %}
-  <h2 class="text-white">Reminders Page</h2>
+<style>
+  body {
+    background-color: #19243f;
+    color: #f9fafb;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .reminder-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    background-color: #f9fafb;
+    padding: 2rem;
+    border-radius: 16px;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #111827;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .reminder-card {
+    background-color: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: box-shadow 0.2s;
+  }
+
+  .reminder-card:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .reminder-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .reminder-title {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #111827;
+  }
+
+  .reminder-desc {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+
+  .reminder-meta {
+    display: flex;
+    align-items: center;
+  }
+
+  .reminder-time {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-left: 1rem;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-left: 10px;
+  }
+
+  .badge.overdue {
+    background-color: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .badge.due-tomorrow {
+    background-color: #fef3c7;
+    color: #92400e;
+  }
+
+  .badge.todo {
+    background-color: #dbeafe;
+    color: #1e40af;
+  }
+
+  .badge.inprogress {
+    background-color: #fef9c3;
+    color: #92400e;
+  }
+
+  .badge.completed {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+
+  .reminder-icons a {
+    color: #6b7280;
+    margin-left: 10px;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .reminder-icons a:hover {
+    color: #111827;
+  }
+</style>
+
+<div class="reminder-container">
+  <h2 class="text-dark fw-bold">Reminders</h2>
+
+  {% if reminders %}
+    {% for section, tasks in reminders.items %}
+      <div>
+        <div class="section-title">{{ section }}</div>
+
+        {% if tasks %}
+          {% for task in tasks %}
+            <div class="reminder-card">
+              <div class="reminder-info">
+                <span class="reminder-title">{{ task.title }}</span>
+                <span class="reminder-desc">{{ task.description }}</span>
+              </div>
+              <div class="reminder-meta">
+                {% if section == 'Today' and task.due_date < current_date %}
+                  <span class="badge overdue">Overdue</span>
+                  
+                {% elif section == 'Tomorrow' %}
+                  <span class="badge due-tomorrow">Due tomorrow</span>
+                {% else %}
+                  <span class="badge {{ task.status|lower }}">{{ task.get_status_display }}</span>
+                {% endif %}
+                <span class="reminder-time">{{ task.due_date|date:"M d, Y" }}</span>
+                <div class="reminder-icons">
+                  <a href="{% url 'send_reminder_notification' task.id %}" title="Send Reminder"><i class="fa-regular fa-bell"></i></a>
+                  <a href="{% url 'edit_reminder_task' task.id %}" title="Edit from Reminder"><i class="fa-solid fa-pen-to-square"></i></a>
+                  <a href="{% url 'task_delete' task.id %}" title="Delete"><i class="fa-solid fa-trash"></i></a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+
+          <div style="margin-top: 0.5rem;">
+          <a href="{% url 'view_more_reminders' category=section %}" class="text-sm text-primary fw-semibold">View more</a>
+          </div>
+        {% else %}
+          <p class="text-muted fst-italic">No tasks in this category.</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-muted fst-italic">No reminders found.</p>
+  {% endif %}
+</div>
+
+<!-- Font Awesome CDN -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 {% endblock %}
-<a href="{% url 'reminders' %}" class="nav-link">Reminders</a>
+
+
+

@@ -7,35 +7,49 @@
     background-color: #111827;
     font-family: 'Segoe UI', sans-serif;
   }
+
   .card {
     background-color: #e5e7eb;
     border-radius: 1rem;
   }
+
   .form-label {
     color: #1f2937;
   }
+
   .form-control,
   .form-select {
     border-radius: 0.5rem;
     padding: 0.75rem 1rem;
   }
-  .btn-success {
-    background-color: #047857;
-    border-color: #047857;
+
+  .btn-primary {
+    background-color: #2563eb;
+    border-color: #2563eb;
   }
-  .btn-success:hover {
-    background-color: #065f46;
-    border-color: #065f46;
+
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+
+  .btn-secondary {
+    background-color: #6b7280;
+    border-color: #6b7280;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: #4b5563;
+    border-color: #4b5563;
   }
 </style>
 
 <div class="row justify-content-center mt-5">
   <div class="col-md-8">
-    <div class="card shadow-lg border-0 p-3">
+    <div class="card shadow-lg border-0 p-4">
       <div class="card-body">
-        <h3 class="card-title mb-4 text-center text-primary fw-bold">
-        Create a New Task
-        </h3>
+        <h3 class="card-title text-center text-primary fw-bold mb-4">Edit Reminder Task</h3>
 
         <form method="post" novalidate>
           {% csrf_token %}
@@ -61,12 +75,8 @@
           </div>
 
           <div class="d-flex justify-content-between">
-            <a href="{% url 'home' %}" class="btn btn-secondary">
-              ← Cancel
-            </a>
-            <button type="submit" class="btn btn-success px-4">
-            Save
-            </button>
+            <a href="{% url 'reminders' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary px-4">Update Task</button>
           </div>
         </form>
       </div>

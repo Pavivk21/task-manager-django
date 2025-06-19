@@ -4,13 +4,10 @@ from django.contrib.auth.models import User
 from .models import Task
 from .models import Workspace
 
-class TaskForm(forms.ModelForm):
+class TaskForm(forms.ModelForm):  # used for personal tasks (your tasks page)
     due_date = forms.DateField(
         required=False,
-        widget=forms.DateInput(attrs={
-            'type': 'date',
-            'class': 'form-control',
-        })
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
     )
 
     class Meta:
@@ -19,7 +16,21 @@ class TaskForm(forms.ModelForm):
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class WorkspaceTaskForm(forms.ModelForm):  # no status here
+    due_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Task
+        fields = ['title', 'description', 'due_date']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control'}),
         }
 
 class RegisterForm(UserCreationForm):

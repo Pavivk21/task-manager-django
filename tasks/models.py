@@ -45,7 +45,7 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='TODO')
     created_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateField(null=True, blank=True)
-    
+    reminder_date = models.DateField(null=True, blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     workspace = models.ForeignKey('Workspace', on_delete=models.CASCADE, null=True, blank=True)  # Null = personal task
 

@@ -1,0 +1,78 @@
+{% extends 'tasks/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+.reminder-card {
+  transition: 0.3s ease;
+}
+.reminder-card:hover {
+  background-color: #f8f9fa;
+}
+</style>
+<div class="container py-4">
+  <div class="card shadow-sm p-4 bg-light">
+    <h3 class="mb-4">{{ category }} Reminders</h3>
+
+    {% if tasks %}
+      {% for task in tasks %}
+        <div class="reminder-card mb-3 p-3 bg-white rounded shadow-sm">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ task.title }}</strong><br>
+              <small class="text-muted">{{ task.description }}</small>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+              {% if category == "Today" and task.due_date < current_date %}
+                <span class="badge bg-danger">Overdue</span>
+              {% elif category == "Tomorrow" %}
+                <span class="badge bg-warning text-dark">Due tomorrow</span>
+              {% else %}
+                <span class="badge bg-secondary">{{ task.get_status_display }}</span>
+              {% endif %}
+              <span class="text-muted">{{ task.due_date|date:"M d, Y" }}</span>
+              <a href="{% url 'task_detail' task.id %}" title="Reminder"><i class="fa-regular fa-bell"></i></a>
+              <a href="{% url 'task_update' task.id %}" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+              <a href="{% url 'task_delete' task.id %}" title="Delete"><i class="fa-solid fa-trash"></i></a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}  
+            <!-- Pagination block START -->
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+          {% if tasks.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ tasks.previous_page_number }}">Previous</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">Previous</span>
+            </li>
+          {% endif %}
+
+          <li class="page-item disabled">
+            <span class="page-link">
+              Page {{ tasks.number }} of {{ tasks.paginator.num_pages }}
+            </span>
+          </li>
+
+          {% if tasks.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ tasks.next_page_number }}">Next</a>
+            </li>
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">Next</span>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
+    {% else %}
+      <p class="text-muted fst-italic">No tasks available in this category.</p>
+    {% endif %}
+
+    <a href="{% url 'reminders' %}" class="btn btn-primary mt-4">Back to Reminders</a>
+  </div>
+</div>
+{% endblock %}

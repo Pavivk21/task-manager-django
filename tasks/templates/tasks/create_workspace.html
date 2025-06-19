@@ -1,13 +1,87 @@
 {% extends 'tasks/base.html' %}
+{% load static %}
+
 {% block content %}
-<div class="container mt-4">
-  <div class="card p-4">
-    <h2>Create a New Workspace</h2>
-    <form method="post">
-      {% csrf_token %}
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">Create Workspace</button>
-    </form>
-  </div>
+<style>
+  body {
+    background-color: #252932;
+    color: #f9fafb;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .workspace-card {
+    max-width: 500px;
+    margin: 5rem auto;
+    background-color: #334865;
+    padding: 2rem 2.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    color: #f9fafb;
+  }
+
+  .workspace-card h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+    font-weight: bold;
+    text-align: center;
+    color: #ffffff;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #d1d5db;
+  }
+
+  .form-group input[type="text"] {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    background-color: #111827;
+    color: #f9fafb;
+    transition: border-color 0.3s ease;
+  }
+
+  .form-group input[type="text"]:focus {
+    border-color: #3b82f6;
+    outline: none;
+  }
+
+  .btn-create {
+    display: block;
+    width: 100%;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.75rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-create:hover {
+    background-color: #2563eb;
+  }
+</style>
+
+<div class="workspace-card">
+  <h2>Create a New Workspace</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label for="name">Name:</label>
+      <input type="text" name="name" id="name" required />
+    </div>
+    <button type="submit" class="btn-create">Create Workspace</button>
+  </form>
 </div>
 {% endblock %}

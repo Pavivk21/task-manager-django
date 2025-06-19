@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from .forms import TaskForm, RegisterForm
+from .forms import TaskForm, RegisterForm, WorkspaceTaskForm
 from .models import Task
 from datetime import date
 from django.contrib import messages
@@ -22,6 +22,10 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.contrib.auth.models import User
 from django.views.decorators.http import require_POST,timezone
+from django.utils.timezone import localdate
+
+
+
 
 # ======================== Dashboard & Profile ==========================
 
@@ -134,14 +138,18 @@ def workspace_dashboard(request, workspace_id):
         return redirect('dashboard')
 
     # Show only tasks that belong to this workspace (not user-specific)
-    tasks = Task.objects.filter(workspace=workspace).order_by('-created_at')
-    total_tasks = tasks.count()
-    completed_tasks = tasks.filter(status='COMPLETED').count()
+    task_list = Task.objects.filter(workspace=workspace).order_by('-created_at')
+    paginator = Paginator(task_list, 5)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    total_tasks = task_list.count()
+    completed_tasks = task_list.filter(status='COMPLETED').count()
     progress_percent = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
 
     return render(request, 'tasks/workspace_dashboard.html', {
         'workspace': workspace,
-        'tasks': tasks[:5],  # limit to 5 recent
+        'tasks': page_obj,  # ← paginated
+        'page_obj': page_obj,  # ← required for pagination controls
         'total_tasks': total_tasks,
         'completed_tasks': completed_tasks,
         'progress': progress_percent,
@@ -236,30 +244,26 @@ def create_workspace(request):
         form = WorkspaceForm()
     return render(request, 'tasks/create_workspace.html', {'form': form})
 
-@login_required
 def create_workspace_task(request, workspace_id):
     workspace = get_object_or_404(Workspace, id=workspace_id)
 
-    # Ensure user has permission
-    if request.user != workspace.owner and request.user not in workspace.members.all():
-        return HttpResponseForbidden("You do not have permission to add tasks to this workspace.")
-
     if request.method == 'POST':
-        form = TaskForm(request.POST)
+        form = WorkspaceTaskForm(request.POST)
         if form.is_valid():
             task = form.save(commit=False)
-            task.owner = request.user
             task.workspace = workspace
+            task.created_by = request.user  # optional field, if you track who created it
+            task.owner = request.user       # ✅ FIX: assign required field
             task.save()
-            messages.success(request, "✅ Task created successfully.")
-            return redirect('workspace_dashboard', workspace_id=workspace_id)
+            messages.success(request, "Task created successfully!")
+            return redirect('workspace_dashboard', workspace_id=workspace.id)
     else:
-        form = TaskForm()
+        form = WorkspaceTaskForm()
 
-    return render(request, 'tasks/create_workspace_task.html', {
-        'workspace': workspace,
-        'form': form
-    })
+    return render(request, 'tasks/create_workspace_task.html', {'form': form, 'workspace': workspace})
+
+
+
 @login_required
 def post_login_redirect(request):
     token = request.session.pop('invitation_token', None)
@@ -290,6 +294,122 @@ def update_task_status(request):
     return redirect('workspace_dashboard', workspace_id=task.workspace.id)
 
 
+# tasks/views.py
+
+def reminders_view(request):
+    today = localdate()
+    tomorrow = today + timedelta(days=1)
+    week_end = today + timedelta(days=7)
+    user = request.user
+
+    # Only show TODO or INPROGRESS tasks
+    active_statuses = ["TODO", "INPROGRESS"]
+    REMINDER_LIMIT=5
+    reminders = {
+        "Today": Task.objects.filter(owner=user, status__in=active_statuses).filter(
+            Q(reminder_date=today) | Q(due_date=today)
+        ).distinct()[:REMINDER_LIMIT],
+        "Tomorrow": Task.objects.filter(owner=user, status__in=active_statuses).filter(
+            Q(reminder_date=tomorrow) | Q(due_date=tomorrow)
+        ).distinct()[:REMINDER_LIMIT],
+        "This Week": Task.objects.filter(owner=user, status__in=active_statuses).filter(
+            Q(reminder_date__gt=tomorrow, reminder_date__lte=week_end) |
+            Q(due_date__gt=tomorrow, due_date__lte=week_end)
+        ).distinct()[:REMINDER_LIMIT],
+        "All": Task.objects.filter(owner=user, status__in=active_statuses).filter(
+            Q(reminder_date__isnull=False) | Q(due_date__isnull=False)
+        ).distinct()[:REMINDER_LIMIT],
+    }
+
+    for key, qs in reminders.items():
+        print(f"{key}: {qs.count()} reminders")
+
+    return render(request, 'tasks/reminders.html', {
+        "reminders": reminders,
+        "current_date": today,
+    })
+
+@login_required
+def quick_add_reminder(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        days_ahead = int(request.POST.get('days_ahead', 0))
+        reminder_date = timezone.now().date() + timedelta(days=days_ahead)
+
+        Task.objects.create(
+            title=title,
+            description="Auto-created test reminder",
+            owner=request.user,
+            reminder_date=reminder_date
+        )
+        return redirect('reminders_view')
+
+    return render(request, 'tasks/test_add_reminder.html')
+
+def view_more_reminders(request, category):
+    today = localdate()
+    tomorrow = today + timedelta(days=1)
+    week_end = today + timedelta(days=7)
+    user = request.user
+
+    if category == "Today":
+        task_qs = Task.objects.filter(owner=user).filter(
+            Q(reminder_date=today) | Q(due_date=today)
+        ).order_by('due_date')
+    elif category == "Tomorrow":
+        task_qs = Task.objects.filter(owner=user).filter(
+            Q(reminder_date=tomorrow) | Q(due_date=tomorrow)
+        ).order_by('due_date')
+    elif category == "This Week":
+        task_qs = Task.objects.filter(owner=user).filter(
+            Q(reminder_date__gt=tomorrow, reminder_date__lte=week_end) |
+            Q(due_date__gt=tomorrow, due_date__lte=week_end)
+        ).order_by('due_date')
+    elif category == "All":
+        task_qs = Task.objects.filter(owner=user).filter(
+            Q(reminder_date__isnull=False) | Q(due_date__isnull=False)
+        ).order_by('reminder_date')
+    else:
+        task_qs = Task.objects.none()
+
+    # Add pagination
+    paginator = Paginator(task_qs, 6)  # Show 5 tasks per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'tasks/view_more_reminders.html', {
+        'tasks': page_obj,
+        'category': category,
+        'current_date': today,
+        'page_obj': page_obj,  # Needed for pagination UI
+    })
+
+def edit_reminder_task(request, pk):
+    task = get_object_or_404(Task, pk=pk, owner=request.user)
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Task updated successfully from reminder.')
+            return redirect('reminders')
+    else:
+        form = TaskForm(instance=task)
+    return render(request, 'tasks/edit_reminder_task.html', {'form': form})
+
+def send_reminder_notification(request, pk):
+    task = get_object_or_404(Task, pk=pk, owner=request.user)
+    send_mail(
+        subject=f"Reminder: {task.title}",
+        message=f"This is a reminder for your task: {task.title}\nDue on: {task.due_date}\nDescription: {task.description}",
+        from_email='noreply@yourdomain.com',
+        recipient_list=[request.user.email],
+        fail_silently=False,
+    )
+    messages.success(request, 'Reminder email sent!')
+    return redirect('reminders')
+
+
+@login_required
 def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
@@ -304,29 +424,53 @@ def register(request):
 
 @login_required
 def task_list(request):
-    selected_month = request.GET.get('month')  # Gets selected month number as string
-    tasks = Task.objects.filter(owner=request.user).order_by('due_date')
+    selected_month = request.GET.get('month')
+    start = request.GET.get('start')
+    end = request.GET.get('end')
     filter_val = request.GET.get('filter')
 
+    tasks = Task.objects.filter(owner=request.user).order_by('due_date')
+
+    # Filter by status
+    if filter_val == 'completed':
+        tasks = tasks.filter(status='COMPLETED')
+    elif filter_val == 'pending':
+        tasks = tasks.exclude(status='COMPLETED')
+    elif filter_val == 'today':
+        from datetime import date
+        tasks = tasks.filter(due_date=date.today())
+    elif filter_val == 'week':
+        from datetime import date, timedelta
+        today = date.today()
+        week_end = today + timedelta(days=7)
+        tasks = tasks.filter(due_date__range=(today, week_end))
+
+    # Filter by month
     if selected_month:
         tasks = tasks.filter(due_date__month=int(selected_month))
 
-    # Prepare months dictionary like: {1: 'January', 2: 'February', ...}
-    months = {i: name for i, name in enumerate(month_name) if i != 0}
+    # Filter by date range
+    if start and end:
+        tasks = tasks.filter(due_date__range=[start, end])
+
+    # Prepare months dictionary like {1: 'January', ...}
+    months = {i: month_name[i] for i in range(1, 13)}
+    selected_month_name = months.get(int(selected_month)) if selected_month else ''
 
     paginator = Paginator(tasks, 6)
     page_number = request.GET.get('page')
-    tasks = paginator.get_page(page_number)
-    selected_month_name = dict(months).get(int(selected_month)) if selected_month else ''
+    page_obj = paginator.get_page(page_number)
 
-
-    return render(request, 'tasks/home.html', {
-    'tasks': tasks,
-    'months': months,
-    'selected_month': int(selected_month) if selected_month else '',
-    'selected_month_name': selected_month_name,
-    'filter_val': filter_val
-})
+    context = {
+        "tasks": page_obj,
+        "filter_val": filter_val,
+        "selected_month": int(selected_month) if selected_month else '',
+        "selected_month_name": selected_month_name,
+        "start": start,
+        "end": end,
+        "months": months,
+    }
+    return render(request, "tasks/home.html", context)
 
 @login_required
 def home(request):
@@ -338,6 +482,7 @@ def home(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
     today = date.today()
+    query = request.GET.get('q', '').strip()
 
     # Filter by status
     if filter_val == 'completed':
@@ -368,8 +513,15 @@ def home(request):
         if selected_month:
             tasks_queryset=tasks_queryset.filter(due_date__month=int(selected_month))
 
+# 🔍 Search by title or description
+    
+    if query:
+        tasks_queryset = tasks_queryset.filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        )
+
     # Prepare month list
-    months = [(i, name) for i, name in enumerate(month_name) if i != 0]
+    months = {i: name for i, name in enumerate(month_name) if i != 0}
     month_dict = dict(months)
     selected_month_name = month_dict.get(int(selected_month)) if selected_month else ''
 
@@ -386,6 +538,7 @@ def home(request):
         'filter_val': filter_val,
         'start': start,
         'end': end,
+        'query': query,
     })
 
 @login_required
@@ -429,7 +582,7 @@ def task_delete(request, pk):
 class CustomLoginView(LoginView):
     template_name = 'registration/login.html'  
     def form_valid(self, form):
-        messages.success(self.request, f"👋 Welcome back, {form.get_user().username}!")
+        messages.success(self.request, f"Welcome back, {form.get_user().username}!")
         response=super().form_valid(form)
         token = self.request.session.pop('invitation_token', None)
         if token:
@@ -437,10 +590,6 @@ class CustomLoginView(LoginView):
 
         return response
     
-
-@login_required
-def reminders(request):
-    return render(request, 'tasks/reminders.html')
 
 
 

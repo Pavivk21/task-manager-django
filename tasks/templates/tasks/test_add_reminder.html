@@ -1,0 +1,21 @@
+{% extends 'tasks/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 600px;">
+  <h2 class="mb-4">Quick Add Reminder</h2>
+  <form method="post" class="bg-light p-4 rounded shadow-sm">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="title" class="form-label">Task Title</label>
+      <input type="text" name="title" id="title" class="form-control" placeholder="e.g., Finish report" required>
+    </div>
+    <div class="mb-3">
+      <label for="days_ahead" class="form-label">Reminder in how many days?</label>
+      <input type="number" name="days_ahead" id="days_ahead" class="form-control" value="0" min="0" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Add Reminder</button>
+    <a href="{% url 'reminders_view' %}" class="btn btn-secondary ms-2">View Reminders</a>
+  </form>
+</div>
+{% endblock %}
