@@ -17,7 +17,7 @@
 -  Summary Dashboard with Charts (using Chart.js)
 -  Profile Page with Stats
 -  Responsive UI with Bootstrap
--  SQLite by default / Optional PostgreSQL support
+-  SQLite by default and PostgreSQL support
 
 ---
 
@@ -25,7 +25,7 @@
 
 - Python 3.x
 - Django 4.x
-- PostgreSQL or SQLite
+- PostgreSQL 
 - HTML, CSS, Bootstrap 5
 - Chart.js for analytics
 
